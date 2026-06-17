@@ -4,7 +4,7 @@ import {inngest} from '../inngest/index.js';
 export const createTask=async(req,res)=>{
     try{
         const {userId}=await req.auth();
-        const {projectId,title,description,type,status,priority,asigneeId,due_date}=req.body;
+        const {projectId,title,description,type,status,priority,assigneeId,due_date}=req.body;
         const origin=req.get('origin');
         const project=await prisma.project.findUnique({
             where:{id:projectId},
@@ -18,8 +18,8 @@ export const createTask=async(req,res)=>{
         else if(project.team_lead !== userId){
             return res.status(403).json({message:"You are not the team lead of this project"});
         }
-        else if(asigneeId && !project.members.some((member)=>member.userId===asigneeId)){
-            return res.status(403).json({message:"Asignee must be a member of the project or workspace"});
+        else if(assigneeId && !project.members.some((member)=>member.userId===assigneeId)){
+            return res.status(403).json({message:"Assignee must be a member of the project or workspace"});
         }
         const task=await prisma.task.create({
             data:{
@@ -27,23 +27,23 @@ export const createTask=async(req,res)=>{
                 title,
                 description,
                 priority,
-                asigneeId,
+                assigneeId,
                 status,
                 due_date:due_date?new Date(due_date):null
             }
         })
-        const taskWithAsignee=await prisma.task.findUnique({
+        const taskWithAssignee=await prisma.task.findUnique({
             where:{id:task.id},
-            include:{asignee:true}
+            include:{assignee:true}
         });
-        await inngest.send({
+        const result=await inngest.send({
             name: "app/task.assigned",
             data: {
                 taskId: task.id,
                 origin
             },
         });
-        res.status(201).json({message:"Task created successfully",task:taskWithAsignee});
+        res.status(201).json({message:"Task created successfully",task:taskWithAssignee});
     }
     catch(error){
         res.status(500).json({error:error.code||error.message});
@@ -87,7 +87,7 @@ export const deleteTask=async(req,res)=>{
         const tasks=await prisma.task.findMany({
             where:{id:{in:taskIds}}
         });
-        if(tasks.lenngth===0){
+        if(tasks.length===0){
             return res.status(404).json({message:"Task not found"});
         }
         const project=await prisma.project.findUnique({
