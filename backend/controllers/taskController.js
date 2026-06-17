@@ -29,6 +29,7 @@ export const createTask=async(req,res)=>{
                 priority,
                 assigneeId,
                 status,
+                type,
                 due_date:due_date?new Date(due_date):null
             }
         })
@@ -46,6 +47,7 @@ export const createTask=async(req,res)=>{
         res.status(201).json({message:"Task created successfully",task:taskWithAssignee});
     }
     catch(error){
+        console.log(error);
         res.status(500).json({error:error.code||error.message});
     }
 }

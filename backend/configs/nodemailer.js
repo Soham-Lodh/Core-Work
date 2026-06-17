@@ -7,7 +7,6 @@ const sendEmail = async ({ to, subject, body }) => {
       {
         sender: {
           email: process.env.SENDER_EMAIL,
-          name: "Core Work",
         },
         to: [
           {
@@ -19,8 +18,9 @@ const sendEmail = async ({ to, subject, body }) => {
       },
       {
         headers: {
-          "api-key": process.env.BREVO_API_KEY,
-          "Content-Type": "application/json",
+          accept: "application/json",
+          "content-type": "application/json",
+          "api-key": process.env.SMTP_PASS,
         },
       }
     );
