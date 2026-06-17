@@ -1,5 +1,4 @@
 import prisma from "../configs/prisma.js";
-import sendEmail from "../configs/nodemailer.js";
 export const createTask = async (req, res) => {
   try {
     const { userId } = await req.auth();
@@ -30,11 +29,9 @@ export const createTask = async (req, res) => {
       assigneeId &&
       !project.members.some((member) => member.userId === assigneeId)
     ) {
-      return res
-        .status(403)
-        .json({
-          message: "Assignee must be a member of the project or workspace",
-        });
+      return res.status(403).json({
+        message: "Assignee must be a member of the project or workspace",
+      });
     }
     const task = await prisma.task.create({
       data: {
@@ -52,47 +49,6 @@ export const createTask = async (req, res) => {
       where: { id: task.id },
       include: { assignee: true },
     });
-
-    const assignee = await prisma.user.findUnique({
-      where: {
-        id: assigneeId,
-      },
-    });
-
-    if (assignee) {
-      await sendEmail({
-        to: assignee.email,
-        subject: `New Task Assigned in ${project.name}`,
-        body: `
-            <p>Hello ${assignee.name},</p>
-
-            <p>You have been assigned a new task.</p>
-
-            <h3>${title}</h3>
-
-            <p><strong>Description:</strong> ${description || "No description provided"}</p>
-
-            <p><strong>Priority:</strong> ${priority}</p>
-
-            <p><strong>Status:</strong> ${status}</p>
-
-            ${
-              due_date
-                ? `<p><strong>Due Date:</strong> ${new Date(
-                    due_date,
-                  ).toLocaleDateString()}</p>`
-                : ""
-            }
-
-            <p><strong>Project:</strong> ${project.name}</p>
-
-            <a href="${origin}">
-                Open Project
-            </a>
-        `,
-      });
-    }
-
     res
       .status(201)
       .json({ message: "Task created successfully", task: taskWithAssignee });
